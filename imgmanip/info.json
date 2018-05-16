@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "FuTOM",
+    "SHORT" : "Manipulate images using PIL",
+    "DESCRIPTION" : "Manipulate images using PIL",
+    "DISABLED" : false,
+    "NAME" : "ImgManip",
+    "TAGS" : ["image", "manipulation"],
+    "INSTALL_MSG" : "Usage: '[p]randmanip <link directly to image>'"
+}
