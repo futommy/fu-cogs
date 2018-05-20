@@ -89,7 +89,7 @@ class MinerCog:
 
 	@commands.command(pass_context=True)
 	async def checksettings(self, ctx):
-		await self.bot.say("limit: {} rate: {} amount: {}".format(self.minelimit, self.minerate, self.mineamount))
+		await self.bot.send_message(ctx.message.channel, "limit: {} rate: {} amount: {}".format(self.minelimit, self.minerate, self.mineamount))
 
 def check_folders():
 	if not os.path.exists("data/tom"):
