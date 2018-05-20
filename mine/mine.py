@@ -15,7 +15,7 @@ class MinerCog:
 		self.settings = dataIO.load_json("data/tom/minesettings.json")
 		if not 'settings' in self.settings:
 			self.settings = {'settings': {}}
-		self.debugroom = self.bot.get_channel('443633597417521163')
+		self.debugroom = self.bot.get_channel('425980791550377996')
 		self.bank = self.bot.get_cog('Economy').bank
 		if not 'mineamount' in self.settings['settings']:
 			self.settings['settings']['mineamount'] = 20
@@ -86,6 +86,10 @@ class MinerCog:
 	@checks.mod_or_permissions(administrator=True)
 	async def debugminers(self, ctx):
 		await self.bot.send_message(ctx.message.channel, "Current Miners: " + str(self.miners))
+
+	@commands.command(pass_context=True)
+	async def checksettings(self, ctx):
+		await self.bot.say("limit: {} rate: {} amount: {}".format(self.minelimit, self.minerate, self.mineamount))
 
 def check_folders():
 	if not os.path.exists("data/tom"):
