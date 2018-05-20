@@ -1,5 +1,6 @@
 import discord
 import asyncio
+import os
 from .utils import checks
 from cogs.utils.dataIO import dataIO
 from discord.ext import commands
@@ -9,8 +10,11 @@ class MinerCog:
 
 	def __init__(self, bot):
 		self.bot = bot
-		self.miners = []
+		self.miners = {}
+		self.mining = {}
 		self.settings = dataIO.load_json("data/tom/minesettings.json")
+		if not 'settings' in self.settings:
+			self.settings = {'settings': {}}
 		self.debugroom = self.bot.get_channel('443633597417521163')
 		self.bank = self.bot.get_cog('Economy').bank
 		if not 'mineamount' in self.settings['settings']:
@@ -23,16 +27,19 @@ class MinerCog:
 		self.minelimit = self.settings['settings']['minelimit']
 		self.minerate = self.settings['settings']['minerate']
 
-	async def mine(server, channel):
+	async def mine(self, server, channel):
 		await asyncio.sleep(self.minerate)
-		for user in self.miners[server][channel]:
-			if not self.bank.account_exists(user):
-				await self.bot.send_message(self.debugroom, "{} doesn't have a bank account! Creating one now.".format(user.mention))
-				self.bank.create_account(user)
-				self.bank.deposit_credits(user, self.bankstarter)
-			self.bank.deposit_credits(user, self.mineamount)
-			await self.bot.send_message(self.debugroom, "Gave {} {} gold".format(user.id, self.mineamount))
-		mine(server, channel)
+		if(len(self.miners[server.id][channel.id]) < self.minelimit):
+			self.mining[channel.id] = 0
+			return 0
+		for user in self.miners[server.id][channel.id]:
+			userobj = server.get_member(user)
+			if not self.bank.account_exists(userobj):
+				await self.bot.send_message(self.debugroom, "{} doesn't have a bank account! Creating one now.".format(userobj.mention))
+				self.bank.create_account(userobj)
+			self.bank.deposit_credits(userobj, self.mineamount)
+			await self.bot.send_message(self.debugroom, "Gave {} {} gold".format(user, self.mineamount))
+		await self.mine(server, channel)
 
 	async def on_voice_state_update(self, before, after):
 		await self.bot.send_message(self.debugroom,"room trigger")
@@ -42,23 +49,43 @@ class MinerCog:
 		except:
 			await self.bot.edit_channel(before.voice.voice_channel, name=before.voice.voice_channel.name.replace(u"\U0001F4B0", ''))
 			await self.bot.send_message(self.debugroom, "Channel empty")
-			self.miners[before.server][after.voice_channel.id] = []
+			try:
+				self.miners[before.server.id][before.voice_channel.id] = []
+			except KeyError:
+				self.miners[before.server.id] = {}
+				self.miners[before.server.id][before.voice_channel.id] = []
 			return 0
-		if(len(after_members) >= self.minelimit):
+		try:
+			if after.id not in self.miners[after.server.id][after.voice_channel.id]:
+				await self.bot.send_message(self.debugroom, "Added {} to miners".format(after.name))
+				self.miners[after.server.id][after.voice_channel.id].append(after.id)
+		except KeyError:
+			await self.bot.send_message(self.debugroom, "Added {} to miners".format(after.name))
+			try:
+				self.miners[after.server.id][after.voice_channel.id] = []
+			except KeyError:
+				self.miners[after.server.id] = {}
+				self.miners[after.server.id][after.voice_channel.id] = []
+			self.miners[after.server.id][after.voice_channel.id].append(after.id)
+		if len(after_members) >= self.minelimit:
 			if u"\U0001F4B0" not in after.voice_channel.name:
 				await self.bot.edit_channel(after.voice.voice_channel, name=after.voice.voice_channel.name+u"\U0001F4B0")
-			if after.id not in self.miners[after.server][after.voice_channel.id]:
-				await self.bot.send_message(self.debugroom, "Added {} to miners".format(after.name))
-				self.miners[after.server][after.voice_channel.id].append(after.id)
-		else:
+			try:
+				if not self.mining[after.voice_channel.id] == 1:
+					self.mining[after.voice_channel.id] = 1
+					await self.mine(after.server, after.voice_channel)
+			except KeyError:
+				self.mining[after.voice_channel.id] = 1
+				await self.mine(after.server, after.voice_channel)
+		if len(after_members) < len(self.miners[after.server.id][after.voice_channel.id]):
 			await self.bot.edit_channel(after.voice.voice_channel, name=after.voice.voice_channel.name.replace(u"\U0001F4B0", ''))
-			await self.bot.send_message(self.debugroom, "{} left and set members below limit ({})".format(after.name, self.minelimit))
-			self.miners[after.server][after.voice_channel.id].remove(after.id)
+			await self.bot.send_message(self.debugroom, "{} left".format(after.name, self.minelimit))
+			self.miners[after.server.id][after.voice_channel.id].remove(after.id)
 
 	@commands.command(pass_context=True)
 	@checks.mod_or_permissions(administrator=True)
 	async def debugminers(self, ctx):
-		await self.bot.send_message(ctx.message.channel, "Current Miners: " + str(self.miners[after.server][after.voice_channel.id]))
+		await self.bot.send_message(ctx.message.channel, "Current Miners: " + str(self.miners))
 
 def check_folders():
 	if not os.path.exists("data/tom"):
@@ -69,7 +96,7 @@ def check_folders():
 def check_files():
 	if not dataIO.is_valid_json("data/tom/minesettings.json"):
 		print("Creating mine's settings.json...")
-		dataIO.save_json(f, {})
+		dataIO.save_json("data/tom/minesettings.json", {})
 
 def setup(bot):
 	check_folders()
