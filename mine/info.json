@@ -1,0 +1,9 @@
+{
+    "AUTHOR" : "FuTOM",
+    "SHORT" : "Users in voice channels over a limit get credits",
+    "DESCRIPTION" : "A number of users over a limit in a voice channel are awarded credits until the number of users is under the limit.",
+    "DISABLED" : false,
+    "NAME" : "Mine",
+    "TAGS" : ["mine", "economy"],
+    "INSTALL_MSG" : "Usage: '[[[to be set]]]'"
+}
