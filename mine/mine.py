@@ -15,7 +15,7 @@ class MinerCog:
 		self.settings = dataIO.load_json("data/tom/minesettings.json")
 		if not 'settings' in self.settings:
 			self.settings = {'settings': {}}
-		self.debugroom = self.bot.get_channel('443633597417521163')
+		self.debugroom = self.bot.get_channel('425980791550377996')
 		self.bank = self.bot.get_cog('Economy').bank
 		if not 'mineamount' in self.settings['settings']:
 			self.settings['settings']['mineamount'] = 20
