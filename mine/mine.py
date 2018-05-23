@@ -44,6 +44,22 @@ class MinerCog:
 	async def on_voice_state_update(self, before, after):
 		await self.bot.send_message(self.debugroom,"room trigger")
 		after_members = ''
+		if self.miners[after.server.id] == {}:
+			server = after.server
+			for channel in server.channels:
+				if channel.type == "Voice":
+					for member in channel.voice_members:
+						self.miners[after.server.id][channel.id].append(member.id)
+					if len(self.miners[after.server.id][channel.id]) > self.minelimit:
+						if u"\U0001F4B0" not in channel.name:
+							await self.bot.edit_channel(channel, name=channel.name+u"\U0001F4B0")
+						try:
+							if not self.mining[channel.id] == 1:
+								self.mining[channel.id] = 1
+								await self.mine(after.server, channel)
+						except KeyError:
+							self.mining[channel.id] = 1
+							await self.mine(after.server, channel)
 		try:
 			after_members = after.voice_channel.voice_members
 		except:
@@ -67,7 +83,10 @@ class MinerCog:
 				self.miners[after.server.id] = {}
 				self.miners[after.server.id][after.voice_channel.id] = []
 			self.miners[after.server.id][after.voice_channel.id].append(after.id)
-		if len(after_members) >= self.minelimit:
+		if after.voice.self_deaf:
+			await self.bot.send_message(self.debugroom, "{} is deafened, removing from miners")
+			self.miners[after.server.id][after.voice_channel.id].remove(after.id)
+		if len(self.miners[after.server.id][after.voice_channel.id]) >= self.minelimit:
 			if u"\U0001F4B0" not in after.voice_channel.name:
 				await self.bot.edit_channel(after.voice.voice_channel, name=after.voice.voice_channel.name+u"\U0001F4B0")
 			try:
@@ -78,9 +97,10 @@ class MinerCog:
 				self.mining[after.voice_channel.id] = 1
 				await self.mine(after.server, after.voice_channel)
 		if len(after_members) < len(self.miners[after.server.id][after.voice_channel.id]):
-			await self.bot.edit_channel(after.voice.voice_channel, name=after.voice.voice_channel.name.replace(u"\U0001F4B0", ''))
 			await self.bot.send_message(self.debugroom, "{} left".format(after.name, self.minelimit))
 			self.miners[after.server.id][after.voice_channel.id].remove(after.id)
+		if len(self.miners[after.server.id][after.voice_channel.id]) < self.minelimit:
+			await self.bot.edit_channel(after.voice.voice_channel, name=after.voice.voice_channel.name.replace(u"\U0001F4B0", ''))
 
 	@commands.command(pass_context=True)
 	@checks.mod_or_permissions(administrator=True)
