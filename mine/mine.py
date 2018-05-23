@@ -45,6 +45,7 @@ class MinerCog:
 		await self.bot.send_message(self.debugroom,"room trigger")
 		after_members = ''
 		if self.miners[after.server.id] == {}:
+			self.bot.send_message(self.debugroom, "Gathering users")
 			server = after.server
 			for channel in server.channels:
 				if channel.type == "Voice":
