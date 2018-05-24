@@ -15,7 +15,7 @@ class MinerCog:
 		self.settings = dataIO.load_json("data/tom/minesettings.json")
 		if not 'settings' in self.settings:
 			self.settings = {'settings': {}}
-		self.debugroom = self.bot.get_channel('425980791550377996')
+		self.debugroom = self.bot.get_channel('443633597417521163')
 		self.bank = self.bot.get_cog('Economy').bank
 		if not 'mineamount' in self.settings['settings']:
 			self.settings['settings']['mineamount'] = 20
@@ -102,6 +102,8 @@ class MinerCog:
 			if before.id in self.miners[before.server.id][before.voice_channel.id] and after not in before.voice_channel.voice_members:
 				self.miners[before.server.id][before.voice_channel.id].remove(before.id)
 		except KeyError:
+			pass
+		except AttributeError:
 			pass
 		try:
 			if after.id not in self.miners[after.server.id][after.voice_channel.id]:
