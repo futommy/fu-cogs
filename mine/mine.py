@@ -42,7 +42,7 @@ class MinerCog:
 		await self.mine(server, channel)
 
 	async def on_voice_state_update(self, before, after):
-		await self.bot.send_message(self.debugroom,"room trigger")
+		#await self.bot.send_message(self.debugroom,"room trigger")
 		after_members = ''
 		try:
 			if len(self.miners[after.server.id]) < 1:
@@ -87,14 +87,17 @@ class MinerCog:
 		try:
 			after_members = after.voice_channel.voice_members
 		except:
-			await self.bot.edit_channel(before.voice.voice_channel, name=before.voice.voice_channel.name.replace(u"\U0001F4B0", ''))
-			await self.bot.send_message(self.debugroom, "Channel empty")
-			try:
-				self.miners[before.server.id][before.voice_channel.id] = []
-			except KeyError:
-				self.miners[before.server.id] = {}
-				self.miners[before.server.id][before.voice_channel.id] = []
-			return 0
+			if len(before.voice_channel.voice_members) < 1:	
+				await self.bot.edit_channel(before.voice_channel, name=before.voice_channel.name.replace(u"\U0001F4B0", ''))
+				await self.bot.send_message(self.debugroom, "Channel empty")
+				try:
+					self.miners[before.server.id][before.voice_channel.id] = []
+				except KeyError:
+					self.miners[before.server.id] = {}
+					self.miners[before.server.id][before.voice_channel.id] = []
+				return 0
+			else:
+				await self.bot.send_message(self.debugroom, "user left")
 		try:
 			if before.id in self.miners[before.server.id][before.voice_channel.id] and after not in before.voice_channel.voice_members:
 				self.miners[before.server.id][before.voice_channel.id].remove(before.id)
