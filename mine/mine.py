@@ -15,7 +15,7 @@ class MinerCog:
 		self.settings = dataIO.load_json("data/tom/minesettings.json")
 		if not 'settings' in self.settings:
 			self.settings = {'settings': {}}
-		self.debugroom = self.bot.get_channel('425980791550377996')
+		self.debugroom = self.bot.get_channel('443633597417521163')
 		self.bank = self.bot.get_cog('Economy').bank
 		if not 'mineamount' in self.settings['settings']:
 			self.settings['settings']['mineamount'] = 20
@@ -51,7 +51,8 @@ class MinerCog:
 				for channel in server.channels:
 					if "{}".format(channel.type) == "voice":
 						for member in channel.voice_members:
-							self.miners[after.server.id][channel.id].append(member.id)
+							if not member.voice.self_deaf or not member.voice.self_mute or not member.voice.deaf or not member.voice.mute:
+								self.miners[after.server.id][channel.id].append(member.id)
 						if len(self.miners[after.server.id][channel.id]) > self.minelimit:
 							if u"\U0001F4B0" not in channel.name:
 								await self.bot.edit_channel(channel, name=channel.name+u"\U0001F4B0")
@@ -70,7 +71,8 @@ class MinerCog:
 					self.miners[after.server.id] = {}
 					self.miners[after.server.id][channel.id] = []
 					for member in channel.voice_members:
-						self.miners[after.server.id][channel.id].append(member.id)
+						if not member.voice.self_deaf or not member.voice.self_mute or not member.voice.deaf or not member.voice.mute:
+							self.miners[after.server.id][channel.id].append(member.id)
 					if len(self.miners[after.server.id][channel.id]) > self.minelimit:
 						if u"\U0001F4B0" not in channel.name:
 							await self.bot.edit_channel(channel, name=channel.name+u"\U0001F4B0")
@@ -94,6 +96,11 @@ class MinerCog:
 				self.miners[before.server.id][before.voice_channel.id] = []
 			return 0
 		try:
+			if before.id in self.miners[before.server.id][before.voice_channel.id] and after not in before.voice_channel.voice_members:
+				self.miners[before.server.id][before.voice_channel.id].remove(before.id)
+		except KeyError:
+			pass
+		try:
 			if after.id not in self.miners[after.server.id][after.voice_channel.id]:
 				await self.bot.send_message(self.debugroom, "Added {} to miners".format(after.name))
 				self.miners[after.server.id][after.voice_channel.id].append(after.id)
@@ -105,8 +112,8 @@ class MinerCog:
 				self.miners[after.server.id] = {}
 				self.miners[after.server.id][after.voice_channel.id] = []
 			self.miners[after.server.id][after.voice_channel.id].append(after.id)
-		if after.voice.self_deaf:
-			await self.bot.send_message(self.debugroom, "{} is deafened, removing from miners".format(after.name))
+		if after.voice.self_deaf or after.voice.self_mute or after.voice.deaf or after.voice.mute:
+			await self.bot.send_message(self.debugroom, "{} is deafened/muted, removing from miners".format(after.name))
 			self.miners[after.server.id][after.voice_channel.id].remove(after.id)
 		if len(self.miners[after.server.id][after.voice_channel.id]) >= self.minelimit:
 			if u"\U0001F4B0" not in after.voice_channel.name:
